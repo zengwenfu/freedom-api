@@ -1,0 +1,29 @@
+{
+  "name": "freedom-api",
+  "version": "1.0.0",
+  "description": "node合并后台接口的方案",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./app/bin/www"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zengwenfu/freedom-api.git"
+  },
+  "keywords": [
+    "node",
+    "merge-api"
+  ],
+  "author": "zengwenfu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zengwenfu/freedom-api/issues"
+  },
+  "homepage": "https://github.com/zengwenfu/freedom-api#readme",
+  "devDependencies": {
+    "body-parser": "^1.15.2",
+    "cookie-parser": "^1.4.3",
+    "ejs": "^2.5.1",
+    "express": "^4.14.0"
+  }
+}
