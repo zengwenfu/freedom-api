@@ -15,12 +15,12 @@
 
 ## 特点
 1. 易用
->除了需要运行在node环境下，freedom-api并不要求更多
+> 除了需要运行在node环境下，freedom-api并不要求更多
 2. 控制反转（借用一下spring的词汇）
->freedom-api已经把规则制定好了，需要怎么去组合接口，由前端说了算
+> freedom-api已经把规则制定好了，需要怎么去组合接口，由前端说了算
 3. 规则简单，完全可以按照promise的then和all来理解（实现上也是promise）
 4. 通行
->freedom-api并不关心api-server用的是什么语言，对api-server没有嵌入也没有依赖，不需要api-server对已有的api-server做任何改造，只要求接口协议是http/https，数据的传输格式是json（这个应该不算是什么要求）。对于调用方，只要把按约定把规则参数传入就好。
+> freedom-api并不关心api-server用的是什么语言，对api-server没有嵌入也没有依赖，不需要api-server对已有的api-server做任何改造，只要求接口协议是http/https，数据的传输格式是json（这个应该不算是什么要求）。对于调用方，只要把按约定把规则参数传入就好。
 
 ## 如何使用
 1. 首先你得有一个node环境，需要写一个基于node的web服务
