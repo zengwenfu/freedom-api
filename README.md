@@ -378,3 +378,6 @@ module.exports = router;
     }
 
 ```
+
+1. 对于每个step，如果result=true，那么它的请求结果将以其name+'Data'为key值返回
+2. 如果在某个step处理的过程中发生了错误，那么将不往下继续执行，放回结果处理已经处理过的step(包括发生错误的step),还增加一个error对象，包含msg，和错误发生的step的name标识
