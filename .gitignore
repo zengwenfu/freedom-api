@@ -1,0 +1,8 @@
+#忽略所有.DS_Store
+.DS_Store
+#忽略app文件夹
+app/*
+#忽略node_modules
+node_modules/*
+#忽略npm-debug.log
+npm-debug.log
