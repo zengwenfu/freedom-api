@@ -258,6 +258,7 @@ module.exports = router;
     module.exports = StartProcessPlugin;
 ```
 
+
 - 插件类以原型中的apply方法为入口，apply传入processRule对象，这个对象为规则解析的核心逻辑
 - 使用`processRule.plugin('name', function(value, callback)(){})`的方式监听`name`对象，由于processRule使用了applyPluginsAsyncWaterfall的方式来触发事件，所以所有的监听方法会以先入先出的方法串行调用，并且通过`callback(null, value)`的方式传递参数，详情请参考：[Tapable中文文档](http://www.jianshu.com/p/c71393db6287)
 
