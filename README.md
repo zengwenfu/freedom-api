@@ -16,9 +16,9 @@
 - <a href="#after">四、写在后面的话</a>
 
 <h2 id="1">如何使用</h2>
-1. 首先你得有一个node环境，需要写一个基于node的web服务
-2. 安装：npm install freedom-api
-3. 提供一个web接口，在此接口中调用freedom-api，以express为例，可以这么写
+一、 首先你得有一个node环境，需要写一个基于node的web服务
+二、 安装：npm install freedom-api
+三、 提供一个web接口，在此接口中调用freedom-api，以express为例，可以这么写
 ```
 var express = require('express');
 var router = express.Router();
@@ -51,13 +51,13 @@ module.exports = router;
 
 ```
 
-    - freedom-api接收四个参数，分别为rule,cookie,和callback，以及plugins
-    - rule传入一个json格式对象，具体格式参见下文的<a href="#rule">规则说明</a>
-    - cookie:freedom-api作为代理服务的接口合并实现，为了维持登录态，需要透传cookie，所以需要在传入参数的时候带入客户端的cookie，并且在回调的时候拿到api-server的set-cookie串，发回客户端去执行setCookie命令。当然，如果客户端是浏览器环境，只要写会`Set-Cookie`就可以了，其它的事情浏览器会帮你做好。如果是andorid/ios环境，想必你已经有了成熟的维持登录态的方案。cookie的获取和set-cookie的写回需要你来进行控制（因为freedom-api不想依赖于express或者koa等web框架），除非你的接口并不需要维护登录状态
-    - callback:freedom-api处理结束会调用这个回调方法，该方法接收result（处理结果）和setCookie（setCookie的作用前面已经提过）两个参数
-    - plugins: 插件列表，freedom-api核心使用了tapable的插件机制，插件可以监听freedom-api在各个环节抛出的事件，进行一些面向切面的处理，例如参数校验，加密加签等。[插件机制](#plug)
+- freedom-api接收四个参数，分别为rule,cookie,和callback，以及plugins
+- rule传入一个json格式对象，具体格式参见下文的<a href="#rule">规则说明</a>
+- cookie:freedom-api作为代理服务的接口合并实现，为了维持登录态，需要透传cookie，所以需要在传入参数的时候带入客户端的cookie，并且在回调的时候拿到api-server的set-cookie串，发回客户端去执行setCookie命令。当然，如果客户端是浏览器环境，只要写会`Set-Cookie`就可以了，其它的事情浏览器会帮你做好。如果是andorid/ios环境，想必你已经有了成熟的维持登录态的方案。cookie的获取和set-cookie的写回需要你来进行控制（因为freedom-api不想依赖于express或者koa等web框架），除非你的接口并不需要维护登录状态
+- callback:freedom-api处理结束会调用这个回调方法，该方法接收result（处理结果）和setCookie（setCookie的作用前面已经提过）两个参数
+- plugins: 插件列表，freedom-api核心使用了tapable的插件机制，插件可以监听freedom-api在各个环节抛出的事件，进行一些面向切面的处理，例如参数校验，加密加签等。[插件机制](#plug)
 
-4. [点击进入示例工程](https://github.com/zengwenfu/freedom-api-simple)
+四、 [点击进入示例工程](https://github.com/zengwenfu/freedom-api-simple)
 
 <h2 id="rule"> 规则说明 </h2>
 > 规则采用json字符串参数传输，前端负责构造规则字符串，后端直接对规则字符串进行解析
@@ -257,7 +257,6 @@ module.exports = router;
 
     module.exports = StartProcessPlugin;
 ```
-
 
 - 插件类以原型中的apply方法为入口，apply传入processRule对象，这个对象为规则解析的核心逻辑
 - 使用`processRule.plugin('name', function(value, callback)(){})`的方式监听`name`对象，由于processRule使用了applyPluginsAsyncWaterfall的方式来触发事件，所以所有的监听方法会以先入先出的方法串行调用，并且通过`callback(null, value)`的方式传递参数，详情请参考：[Tapable中文文档](http://www.jianshu.com/p/c71393db6287)
