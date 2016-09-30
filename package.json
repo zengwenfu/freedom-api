@@ -1,6 +1,6 @@
 {
   "name": "freedom-api",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "通用node接口合并方案，接口的控制权转移到前端，让接口更自由",
   "main": "index.js",
   "scripts": {

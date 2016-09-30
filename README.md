@@ -1,134 +1,70 @@
 # freedom-api
->通行后端接口合并方案，基于node实现的框架，接口的控制权转移到前端，让接口更自由
+>通行后端接口合并方案，基于node实现的框架，接口的控制权转移到前端，让接口更自由。
+>在使用上，搭建一个node代理服务，调用freedom-api，实现接口合并的[规则](#rule)
+>[接口合并的必要性论述](https://github.com/zengwenfu/note/blob/master/node/freedom-api.md)
 
-## web开发的困境
-![](https://github.com/zengwenfu/note/blob/master/images/server-api.png)![](https://github.com/zengwenfu/note/blob/master/images/server-api-all.png)
->在web开发中，前端为了一个实现一个功能，连续的请求多个接口的场景并不少见。图一示例中，后一个接口依赖于前一个接口的请求结果，于是你经常要这样去组织你的接口请求step1.then(step2).then(step3)（不出现层层嵌套已经不错了），图二中，step1,step2,step3虽然没有依赖关系，但是同样需要跟api-server交互三次，对于用户来说，这将是无尽的等待。
+<h2 id="nav">目录</h2>
+- <a href="#1">一、如何使用</a>
+- <a href="#rule">二、规则说明</a>
+    + [规则总览](#3.1)
+    + [steps中的具体字段](#3.2)
+    + [返回值说明](#3.3)
+- <a href="#plug">三、插件说明</a>
+    + [事件说明](#event)
+    + [插件的写法](#how)
+    + [插件注入](#bind)
+- <a href="#after">四、写在后面的话</a>
 
->你可能会抱怨后端的同事，为何不把这几个接口合并，然而后端的同事就会反驳你，你这个页面需要step1->step2->step3，那个页面只需要step1 -> step2，甚至有些页面只需要step1，我如何给你合并？确实，接口提供方为了满足通用性，接口的设计有其既有的粒度。
-
->如果有那么一个后台服务，跟部署在同一个机房（甚至是同一台服务器上），然后给前端提供一套规则，前端只需要把想要的steps按照约定告诉这个后台服务，后台服务去执行step1.then(step2).then(step3)。虽然后台服务跟api-server也交互了三次，但是这个后台服务可以跟api-server部署在同一个网段、同一个服务器甚至还可以集群，不是一个移动设备去访问的速度所能比拟的，更别说很多时候我们的前端的网络环境还是3g/4g
-
->freedom-api就实现了这样一套规则
-
-![](https://github.com/zengwenfu/note/blob/master/images/freedom-api.png)
-
-## 特点
-1. 易用
-> 除了需要运行在node环境下，freedom-api并不要求更多
-2. 控制反转（借用一下spring的词汇）
-> freedom-api已经把规则制定好了，需要怎么去组合接口，由前端说了算
-3. 规则简单，完全可以按照promise的then和all来理解（实现上也是promise）
-4. 通行
-> freedom-api并不关心api-server用的是什么语言，对api-server没有嵌入也没有依赖，不需要api-server对已有的api-server做任何改造，只要求接口协议是http/https，数据的传输格式是json（这个应该不算是什么要求）。对于调用方，只要把按约定把规则参数传入就好。
-
-## 如何使用
+<h2 id="1">如何使用</h2>
 1. 首先你得有一个node环境，需要写一个基于node的web服务
 2. 安装：npm install freedom-api
 3. 提供一个web接口，在此接口中调用freedom-api，以express为例，可以这么写
 ```
 var express = require('express');
 var router = express.Router();
-/**
- * 引入freedom-api库
- */
 var freedomApi = require('freedom-api');
-/**
- * 提供一个接口
- */
+var StartProcessPlugin = require('../plugins/startProcessPlugin.js');
+
 router.post('/freedomApi', function(req, res, next) {
-    // 从请求参数中获取规则
+
+    //规则
     var rule = JSON.parse(req.body.rule);
     //透传cookie，以便保持登录状态
     var cookie = req.get('Cookie');
-    /**
-     * options {}
-     *  rule: 规则
-     *  cookie: 客户端的cookie
-     *  callback: 回调函数，接收请求结果reuslt和服务端的setCookie串 
-     */
+
+    //调用freedom-api
     freedomApi({
         rule: rule,
         cookie: cookie,
-        callback: function() {
+        plugins: [new StartProcessPlugin()],//插件配置
+        callback: function(result, setCookie) {
             //写回cookie
             res.append('Set-Cookie', setCookie);
-            //写回结果
             res.send(JSON.stringify(result));
         }
-    })
+    });
+
+
 });
 
 module.exports = router;
 
 ```
-> freedom-api接收三个参数，分别为rule,cookie,和callback
-> rule传入一个json格式对象，具体规则下文会**详细描述**
-> cookie:值得一提的是，为了维持登录态，freedom-api需要透传cookie，所以需要在传入参数的时候带入客户端的cookie，并且在回调的时候拿到api-server的set-cookie串，发回客户端去setCookie。当然，如果客户端不是浏览器环境，是android和ios，需要另行处理，不过想必你已经有了成熟的方案。cookie的获取和set-cookie的写回需要你来进行控制（因为freedom-api不想依赖于express或者koa等web框架），除非你的接口并不需要维护登录状态
+
+    - freedom-api接收四个参数，分别为rule,cookie,和callback，以及plugins
+    - rule传入一个json格式对象，具体格式参见下文的<a href="#rule">规则说明</a>
+    - cookie:freedom-api作为代理服务的接口合并实现，为了维持登录态，需要透传cookie，所以需要在传入参数的时候带入客户端的cookie，并且在回调的时候拿到api-server的set-cookie串，发回客户端去执行setCookie命令。当然，如果客户端是浏览器环境，只要写会`Set-Cookie`就可以了，其它的事情浏览器会帮你做好。如果是andorid/ios环境，想必你已经有了成熟的维持登录态的方案。cookie的获取和set-cookie的写回需要你来进行控制（因为freedom-api不想依赖于express或者koa等web框架），除非你的接口并不需要维护登录状态
+    - callback:freedom-api处理结束会调用这个回调方法，该方法接收result（处理结果）和setCookie（setCookie的作用前面已经提过）两个参数
+    - plugins: 插件列表，freedom-api核心使用了tapable的插件机制，插件可以监听freedom-api在各个环节抛出的事件，进行一些面向切面的处理，例如参数校验，加密加签等。[插件机制](#plug)
+
 4. [点击进入示例工程](https://github.com/zengwenfu/freedom-api-simple)
 
-## 规则说明
-> 传入服务器的rule需要是json结构的字符串
-### dataTest和errorMsg字段
-```
-    var rule = {
-        dataTest: '$data.code === "0"',
-        errorMsg: 'msg',
-        start: {
-            name: 'start'
-            .....
-        },
-        step1: {
-            name: 'step1'
-            ....
-        },
-        step2: {
-            ....
-        }
-    }
-```
+<h2 id="rule"> 规则说明 </h2>
+> 规则采用json字符串参数传输，前端负责构造规则字符串，后端直接对规则字符串进行解析
+> 规则借鉴promise的all和then语法，切合前端开发人员的开发习惯
 
-1. rule可以传入一个dataTest字段，用于接口返回数据的一般性校验。
-2. dataTest字段传入一个js中的条件判断语句字符串（freedom-api服务器要做好防xxl注入的校验），如上例中的$data.code === "0"（$data表示接口的返回，下文还有描述）。
-3. 如果传入了freedom-api会对每一个step(每个接口请求)进行校验，如果接口没有通过校验，将不会再往下执行，返回已经完成的step数据以及error。如上例中，若step1返回{code: '1', msg: 'error'}，那么请求将返回
-    ```
-    {
-        startData: {
-            ...
-        },
-        step1Data: {
-            code: '1',
-            msg: 'error'
-        },
-        error: {
-            errorStep: 'step1',
-            msg: 'error'
-        }
-    }
-    ```
-4. errorMsg字段是当dataTest校验不通过的时候需要从data中提取哪个字段来作为error中的msg，**注意，这里不需要$data作为前缀**
-
-### start和其它step字段
-1. start作为规则中所有步骤的开始步骤，若其then指针不为false，then将指向start完成之后需要执行的步骤
-2. 其它步骤字段可以随意命名，其名称将作为每个步骤的then指针的寻址key
- ```
-    var rule = {
-        start: {
-            ...
-            then: 'step1'
-        },
-        step1: {
-            ...
-            then: 'step2'
-        },
-        setp2: {
-            ...
-            then: false
-        }
-    }
- ```
-3. steps还可以是数组（以all的方式并行执行），数组中的最后一项增加指向下一步的指针。为了避免嵌套层次太深： 数组可以包含对象，但是对象里面不能再包含数组，数组中的对象不能再包含对象
- ```
+<h3 id="3.1">规则总览</h3>
+```
     //正确的规则
     var rule = {
         start: {
@@ -142,10 +78,8 @@ module.exports = router;
             },
             {
                 name: 'step1-2',
-                ...
-            },
-            {
-                next: 'step2'//作为下一步的指针
+                ...,
+                then: 'step2' //指向下一个step
             }
         ],
         'step2': {
@@ -154,36 +88,34 @@ module.exports = router;
             then: false
         }
     }
+```
+规则的最外层有如下几个参数：
 
-    //错误的规则1
-    var rule = {
-        start: {
-            ...
-            then: 'step1'
+- dataTest：每个接口返回值的简单校验规则（非必传），例如：接口服务器定义的接口只有返回值为`"0"`才是成功，使用`$data.code === "0"`(其中$data是规则的保留变量，用于获得每个接口的返回值)，当条件不满足的时候，代理服务将会把已经请求成功的接口数据以及错误信息返回，不再进行后续的接口请求
+```
+    {
+        "idData": {
+            "code": "0",
+            "msg": "",
+            "data": {
+                "id": "1"
+            }
         },
-        'step1': {
-            step11: [//嵌套太深 XXX
-                ...
-            ]
+        "infoData": {
+            "code": "2",
+            "msg": "数据不存在"
+        },
+        "error": {
+            "msg": "Error: 数据不存在",
+            "step": "info"
         }
     }
-    //错误的规则2
-    var rule = {
-        start: {
-            ...
-            then: 'step1'
-        },
-        'step1': [
-            {
-                step11: {//嵌套太深 XXX
-                    ...
-                }
-            }
-        ]
-    }
- ```
+```
+- errorMsg: 当dataTest条件不满足的时候，取请求返回结果的那个字段作为错误信息（非必传），例如：`errorMsg: "msg"`，表示取resData.msg作为错误提示
+- steps/start: 规则最外层的其它key值定义了合并请求的每个步骤，其中start是整个合并请求的入口步骤，其它步骤可以任意命名，每个步骤可以是对象也可以是数组，对象定义了单独的接口请求，数组定义了并行的多个请求（类似于promise.all），数组内部对象不能再嵌套更深层次的step。
 
-### steps中的字段
+<h3 id="3.2"> steps中的具体字段 </h3>
+
 | 字段名 | 类型 | 说明 |
 | --- | --- | --- |
 | url | string | 接口的请求地址 |
@@ -193,152 +125,7 @@ module.exports = router;
 | result | boolean | 这个步骤的请求结果需不需要返回true返回，false不返回 |
 | then | string/boolean | 为string的时候指向下一个step，为false的时候，这个step为最后一步。当一个step为数组的时候，step字段加在数组中的最后一项，如果未加在最后一项，那么其后的所有请求将不再执行 |
 
-### rule示例 
-```
-    var host = 'host';
-    //simple rule
-    var simpleRule = {
-        dataTest: '$data.code === "0"',
-        errorMsg: 'msg',
-        start: {
-            url: 'http://' + host + ':3000/getId',
-            type: 'get',
-            name: 'id',
-            params: {},
-            result: true,
-            then: 'getInfo'
-        },
-        getInfo: {
-            url: 'http://' + host + ':3000/getInfo',
-            type: 'get',
-            name: 'info',
-            params: {
-                id: '$data.data.id'
-            },
-            result: true,
-            then: false
-        }
-    };
-
-    //mutiRule
-    var mutiRule = {
-        dataTest: '$data.code === "0"',
-        errorMsg: 'msg',
-        start: [{
-            url: 'http://' + host + ':3000/getId',
-            type: 'get',
-            name: 'id',
-            params: {},
-            result: true
-        }, {
-            url: 'http://' + host + ':3000/getName',
-            type: 'get',
-            name: 'name',
-            params: {},
-            result: true,
-            then: 'getInfoByNameAndId'
-        }],
-        getInfoByNameAndId: {
-            url: 'http://' + host + ':3000/getInfoByNameAndId',
-            type: 'get',
-            name: 'info',
-            params: {
-                id: '$data[0].data.id',
-                name: '$data[1].data.name'
-            },
-            result: true,
-            then: false
-        }
-    };
-
-    //long long rule
-    var rule = {
-        dataTest: '$data.code === "0"',
-        errorMsg: 'msg',
-        start: [
-            {
-                url: 'http://localhost:3000/users/getUserInfo',
-                type: 'get',
-                name: 'userInfo',
-                params: {},
-                result: true
-            }, {
-                url: 'http://localhost:3000/users/setScore',
-                type: 'post',
-                name: 'setScore',
-                params: {
-                    score: 10
-                },
-                result: false,
-                then: 'getScoreByUserId'
-            }
-        ],
-        getScoreByUserId: [
-            {
-                url: 'http://localhost:3000/users/getScoreByUserId',
-                type: 'get',
-                name: 'userScore',
-                params: {
-                    userid: '$data[0].data.id'
-                },
-                result: true
-            }, {
-                url: 'http://localhost:3000/users/setScore',
-                type: 'post',
-                name: 'setScore',
-                params: {
-                    score: 10
-                },
-                result: false,
-                then: 'setScore'
-            }
-        ],
-        // getScoreByUserId: {
-        //     url: 'http://localhost:3000/users/getScoreByUserId',
-        //     type: 'get',
-        //     name: 'userScore',
-        //     params: {
-        //         userid: '$data[0].data.id'
-        //         // userid: '5'
-        //     },
-        //     result: true,
-        //     then: 'setScore',
-        // },
-        // start: {
-        //     url: 'http://localhost:3000/users/getUserInfo',
-        //     type: 'get',
-        //     name: 'userInfo',
-        //     params: {},
-        //     result: true,
-        //     then: 'getScoreByUserId'
-        // },
-        // getScoreByUserId: {
-        //     url: 'http://localhost:3000/users/getScoreByUserId',
-        //     type: 'get',
-        //     name: 'userScore',
-        //     params: {
-        //         userid: '$data.data.id'
-        //         // userid: '5'
-        //     },
-        //     result: true,
-        //     then: 'setScore',
-        // },
-        setScore: {
-            url: 'http://localhost:3000/users/setScore',
-            type: 'post',
-            name: 'setScore',
-            params: {
-                score: 10
-            },
-            result: false,
-            then: false
-        }
-    };
-```
-
-
-
-## 返回值说明
+<h3 id="3.3">返回值说明</h3>
 ```
     //所有step执行正常1
     {
@@ -378,6 +165,122 @@ module.exports = router;
     }
 
 ```
-
 1. 对于每个step，如果result=true，那么它的请求结果将以其name+'Data'为key值返回
-2. 如果在某个step处理的过程中发生了错误，那么将不往下继续执行，放回结果处理已经处理过的step(包括发生错误的step),还增加一个error对象，包含msg，和错误发生的step的name标识
+2. 如果在某个step处理的过程中发生了错误，那么后续的step将不再执行，返回已经处理过的step(包括发生错误的step),还增加一个error对象，包含msg，和错误发生的step的name标识
+
+<h2 id='plug'>插件说明</h2>
+>freedom-api核心采用了tapable插件机制，建议先有所了解[Tapable中文文档](http://www.jianshu.com/p/c71393db6287)
+
+<h3 id='event'>事件说明</h3>
+####start-process
+```
+    //抛出事件start-process，以便插件切入
+    this.applyPluginsAsyncWaterfall('start-process', options.rule, function(err, resRule) {
+        if(err) {
+            console.log(err.stack);
+            var errorObj = {
+                msg: err.toString,
+                setp: '0'
+            }
+            var result = {
+                error: errorObj
+            };
+            options.callback(result);
+            return ;
+        }
+        reqCookie = options.cookie;
+        rule = resRule;
+        result = {};
+        self.processRule(rule.start, options.callback);
+    });
+```
+在freedom-api拿到规则准备分析的时候抛出，事件参数为规则对象，插件需要返回处理过的规则对象
+#### before-request/after-request
+```
+    //请求之前事件
+    self.applyPluginsAsyncWaterfall('before-request', options, function(err, resOptions) {
+        if(err) {
+            console.log(err.stack);
+            resolve(err);
+            return ;
+        }
+        resOptions.callback = function(data, _setCookie) {
+            if (!setCookie) {
+                setCookie = _setCookie;
+            }
+            self.applyPluginsAsyncWaterfall('after-request', data, function(e, resData) {
+                if(e) {
+                    console.log(e.stack);
+                    resolve(e);
+                    return;
+                }
+                resolve(resData);
+            });
+        }
+        request(resOptions, reqCookie);
+    });
+```
+分别在接口请求之前和接口请求之后触发，事件参数分别为接口的请求参数和接口的返回结果，插件需要返回处理后的请求参数或者接口返回结果
+#### get-data
+```
+    self.applyPluginsAsyncWaterfall('get-data', data, function(err, resData) {
+        ...
+    }
+```
+每个step完成之后触发，事件参数为每个step的请求结果，倘若step不为数组，那么事件效果同after-request，否则事件参数为all请求后的数组结果，插件需要返回处理后的请求结果
+
+<h3 id='how'>插件的写法</h3>
+```
+    'use strict';
+
+    function StartProcessPlugin() {
+
+    }
+
+    StartProcessPlugin.prototype.apply = function(processRule) {
+        processRule.plugin('start-process', function(value, callback) {
+            console.log(value);
+            //TODO doSomething
+            
+
+            if(err) {
+                //发生错误
+                callback(err, value);
+                return;
+            }
+
+            //返回结果
+            callback(null, value);
+            
+        });
+    }
+
+    module.exports = StartProcessPlugin;
+```
+
+- 插件类以原型中的apply方法为入口，apply传入processRule对象，这个对象为规则解析的核心逻辑
+- 使用`processRule.plugin('name', function(value, callback)(){})`的方式监听`name`对象，由于processRule使用了applyPluginsAsyncWaterfall的方式来触发事件，所以所有的监听方法会以先入先出的方法串行调用，并且通过`callback(null, value)`的方式传递参数，详情请参考：[Tapable中文文档](http://www.jianshu.com/p/c71393db6287)
+
+<h3 id='bind'>插件注入</h3>
+```
+    //调用freedom-api
+    freedomApi({
+        rule: rule,
+        cookie: cookie,
+        plugins: [new StartProcessPlugin()],//插件配置
+        callback: function(result, setCookie) {
+            //写回cookie
+            res.append('Set-Cookie', setCookie);
+            res.send(JSON.stringify(result));
+        }
+    });
+```
+
+- 在调用freedomApi的时候传入plugins对象或对象数组
+
+<h2 id='after'>写在后面的话</h2>
+写的这么卖力，给一颗星吧~~
+
+[返回目录](#nav)
+
+![](https://nodei.co/npm/freedom-api.png)
