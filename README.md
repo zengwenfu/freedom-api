@@ -17,7 +17,9 @@
 
 <h2 id="1">如何使用</h2>
 一、 首先你得有一个node环境，需要写一个基于node的web服务
+
 二、 安装：npm install freedom-api
+
 三、 提供一个web接口，在此接口中调用freedom-api，以express为例，可以这么写
 ```
 var express = require('express');
