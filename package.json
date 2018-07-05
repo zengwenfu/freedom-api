@@ -27,6 +27,7 @@
     "express": "^4.14.0"
   },
   "dependencies": {
-    "tapable": "^0.2.4"
+    "request": "^2.87.0",
+    "tapable": "^1.0.0"
   }
 }
