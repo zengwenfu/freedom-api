@@ -1,11 +1,9 @@
 {
   "name": "freedom-api",
-  "version": "1.0.5",
-  "description": "通用node接口合并方案，接口的控制权转移到前端，让接口更自由",
+  "version": "2.0.0",
+  "description": "combine api on the proxy server",
   "main": "index.js",
-  "scripts": {
-    "start": "node ./app/bin/www"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zengwenfu/freedom-api.git"
