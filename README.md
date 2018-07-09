@@ -192,10 +192,10 @@ this.hooks = {
     });
   }
 ```
-其中，processRule 是 freedom-api 在注册插件时注入的 tapable 对象，使用 tapPromise（除了start） 的方式注册插件。 其它的请参考 [Tapable](https://github.com/webpack/tapable) 文档。
+其中，processRule 是 freedom-api 在注册插件时注入的 tapable 对象，使用 tapPromise（除了start） 的方式注册插件。 其它的请参考 [Tapable](https://github.com/webpack/tapable) 文档。
 > 特别需要注意的事，处理同步 hook "start", 其它的 hook 插件都需要返回一个 promise
 
 ## 不需要担心登录态的问题
 freedom-api 模拟浏览器的方式，会将请求 Response Header 中的 set-cookie 解析保存，再下一个请求将 cookies 注入到 Request Header 中上传，所以即使基于 session <-> cookie 的方式进行登录校验，也不必担心登录态丢失
 
-倘若登录态的维持不是基于 session <-> cookie，你可以从$allData$ 中读取任一个接口请求的 Response header 和 body 来获得你的登录态 token，以此保证登录态
+倘若登录态的维持不是基于 session <-> cookie，你可以从$allData$ 中读取任一个接口请求的 Response header 和 body 来获得你的登录态 token，以此保证登录态
