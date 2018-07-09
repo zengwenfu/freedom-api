@@ -38,9 +38,9 @@ freedom-api 是一款基于 node8 实现的接口合并请求模块，可用于�
 ### 2) 接口请求配置
 接口请求配置是一个 JSON Obj, 可配置如下属性：
 1. url： 接口全路径
-2. method： 只支持 POST or GET，默认为 GET
+2. method： 只支持 POST or GET，默认为 GET
 3. name：请求的唯一 key 值，可以用于读取最终的返回数据
-4. params：当 method 为 GET， 或者 method 为 POST 且请求 body 使用 x-www-form-urlencoded 编码时，用于设置请求参数。否则，此属性不填或者设置为 false/null/0
+4. params：当 method 为 GET， 或者 method 为 POST 且请求 body 使用 x-www-form-urlencoded 编码时，用于设置请求参数。否则，此属性不填或者设置为 false/null/0
 5. json：当 method 为 POST 且请求 body 使用 json 编码时，用于设置请求参数，否则，此属性不填或者设置为 false/null/0。目前 POST 请求只支持 x-www-form-urlencoded 和 json 两种格式（符合大多数接口的设计）。
 6. assert: 结果断言。可以使用简单的 js 语法对结果进行断言，断言不通过不会执行后续流程。
 
