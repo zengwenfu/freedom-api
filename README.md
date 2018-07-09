@@ -120,7 +120,7 @@ freedom-api 将会根据流程定义完全代理所有接口的请求，所以�
     ]
   }
 ```
-2. $allData$: 该变量可以读取该流程之前所有流程请求的 Response body 和 Respone header, 每个请求的结果以请求配置中的 name 为 key 值。所以不必担心无法读取上上一个请求的数据，也不用担心读取不到headers, 例如：
+2. $allData$: 该变量可以读取该流程之前所有流程请求的 Response body 和 Respone header, 每个请求的结果以请求配置中的 name 为 key 值。所以不必担心无法读取上上一个请求的数据，也不用担心读取不到headers, 例如：
 ```js
 // 流程定义
 const processes = [
