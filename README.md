@@ -27,7 +27,7 @@ freedom-api 是一款基于 node8 实现的接口合并请求模块，可用于�
 ```
 ## 流程定义
 ### （1）流程外层规则
-流程外层规则是一个 JSON 数组，它定义了接口请求的串行工作流。数组的元素可以包含单独的接口请求配置，也可以是另一个数组，包含多个并行的接口请求配置。例如：
+流程外层规则是一个 JSON 数组，它定义了接口请求的串行工作流。数组的元素可以包含单独的接口请求配置，也可以是另一个数组，包含多个并行的接口请求配置。例如：
 ```js
   const processes = [
     {...}, // step1
@@ -35,13 +35,13 @@ freedom-api 是一款基于 node8 实现的接口合并请求模块，可用于�
     [{...}, {...}] // 并行请求的 step3 和 step4
   ]
 ```
-### (2) 接口请求配置
+### (2) 接口请求配置
 接口请求配置是一个 JSON Obj, 可配置如下属性：
 1. url： 接口全路径
 2. method： 只支持 POST or GET，默认为 GET
 3. name：请求的唯一 key 值，可以用于读取最终的返回数据
 4. params：当 method 为 GET， 或者 method 为 POST 且请求 body 使用 x-www-form-urlencoded 编码时，用于设置请求参数。否则，此属性不填或者设置为 false/null/0
-5. json：当 method 为 POST 且请求 body 使用 json 编码时，用于设置请求参数，否则，此属性不填或者设置为 false/null/0。目前 POST 请求只支持 x-www-form-urlencoded 和 json 两种格式（符合大多数接口的设计）。
+5. json：当 method 为 POST 且请求 body 使用 json 编码时，用于设置请求参数，否则，此属性不填或者设置为 false/null/0。目前 POST 请求只支持 x-www-form-urlencoded 和 json 两种格式（符合大多数接口的设计）。
 6. assert: 结果断言。可以使用简单的 js 语法对结果进行断言，断言不通过不会执行后续流程。
 
 例如：
@@ -58,9 +58,9 @@ const obj = {
 }
 ```
 ### (3) 特殊语法规则
-freedom-api 将会根据流程定义完全代理整个流程的请求，所以需要有一些特殊的语法规则来处理流程之间的数据依赖。
+freedom-api 将会根据流程定义完全代理整个流程的请求，所以需要有一些特殊的语法规则来处理流程之间的数据依赖。
 
-**URL 参数和请求参数语法：**
+**URL 参数和请求参数语法：**
 
 1. $data$: 读取上一个流程的结果数据，如果上一个流程是一个单独的请求流程，则这个变量代表上一个请求的 Response body 对象（如果返回结果为 Json 字符串，将会解析为 Json 对象）；如果上一个流程是一组并行的请求流程，则 $data$ 依次为并行请求数组的 Response body 组成的数组（同样，Json 字符串会被解析），例如：
 ```js
@@ -80,7 +80,7 @@ const obj = {
     ...
   }
 
-  // 请求参数读取上一个流程结果中的数据
+  // 请求参数读取上一个流程结果中的数据
   {
     ...
     params: [
@@ -144,8 +144,8 @@ const processes = [
     ] 
   ]
 
-// 当执行到 detail2 这个请求的时候，$allData$ 等于:
-// ps: 还没有 detail1 的，因为它是一个并行的请求
+// 当执行到 detail2 这个请求的时候，$allData$ 等于:
+// ps: 还没有 detail1 的，因为它是一个并行的请求
 {
   login: {
     headers: {...},
@@ -181,7 +181,7 @@ this.hooks = {
   afterDueOption: new AsyncSeriesHook(['reqOptions', 'options']) // 请求参数处理之后，请求开始之前，还可以对请求进行相应处理
 }
 ```
-插件编写举例：
+插件编写举例：
 ```js
   function afterDueOptionPlugin(processRule) {
     processRule.hooks.afterDueOption.tapPromise('afterDueOption', (reqOptions, options) => {
@@ -196,6 +196,6 @@ this.hooks = {
 > 特别需要注意的事，处理同步 hook "start", 其它的 hook 插件都需要返回一个 promise
 
 ## 不需要担心登录态的问题
-freedom-api 模拟浏览器的方式，会将请求 Response Header 中的 set-cookie 解析保存，再下一个请求将 cookies 注入到 Request Header 中上传，所以即使基于 session <-> cookie 的方式进行登录校验，也不必担心登录态丢失
+freedom-api 模拟浏览器的方式，会将请求 Response Header 中的 set-cookie 解析保存，再下一个请求将 cookies 注入到 Request Header 中上传，所以即使基于 session <-> cookie 的方式进行登录校验，也不必担心登录态丢失
 
-倘若登录态的维持不是基于 session <-> cookie，你可以从$allData$ 中读取任一个接口请求的 Response header 和 body 来获得你的登录态 token，以此保证登录态
+倘若登录态的维持不是基于 session <-> cookie，你可以从$allData$ 中读取任一个接口请求的 Response header 和 body 来获得你的登录态 token，以此保证登录态
